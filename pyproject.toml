@@ -12,5 +12,8 @@ dependencies = ["PyYAML>=6.0,<7"]
 [project.scripts]
 classpatch = "classpatcher.__main__:main"
 
+[tool.setuptools]
+packages = ["classpatcher"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
