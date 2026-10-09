@@ -10,7 +10,7 @@ import zipfile
 import pytest
 
 from classpatcher.classfile import parse_class
-from classpatcher.jarpatcher import patch_jar
+from classpatcher.jarpatcher import patch_jar, patch_jar_in_place
 from classpatcher.patcher import PatchError, patch_file
 
 
@@ -146,3 +146,16 @@ def test_refuses_signed_jar(compiled_class: Path, tmp_path: Path) -> None:
     write_config(config, source)
     with pytest.raises(PatchError, match="signed JAR"):
         patch_jar(source, tmp_path / "out.jar", config, None)
+
+
+def test_rewrites_jar_in_place_without_backup(compiled_class: Path, tmp_path: Path) -> None:
+    source = source_jar(compiled_class, tmp_path)
+    before = source.read_bytes()
+    config = tmp_path / "patch.yaml"
+    write_config(config, source)
+    _, applied = patch_jar_in_place(source, config, None)
+    assert len(applied) == 1
+    assert source.read_bytes() != before
+    assert not Path(str(source) + ".bak").exists()
+    with zipfile.ZipFile(source) as archive:
+        assert b"\x04\xac" in archive.read("fixture/Sample.class")

@@ -5,18 +5,20 @@ import logging
 from pathlib import Path
 import sys
 
-from .jarpatcher import patch_jar
+from .jarpatcher import patch_jar, patch_jar_in_place
 from .patcher import PatchError, patch_file
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Patch an unpacked Java .class file without reserializing it.")
+    parser = argparse.ArgumentParser(description="Patch an unpacked Java .class file or rewrite an unsigned JAR.")
     target = parser.add_mutually_exclusive_group(required=True)
     target.add_argument("--class-file", type=Path, help="unpacked .class file to modify")
     target.add_argument("--jar", type=Path, help="unsigned JAR to rewrite into --output")
     parser.add_argument("--config", required=True, type=Path, help="YAML patch configuration")
     parser.add_argument("--source-jar", type=Path, help="original JAR whose SHA-256 selects/verifies the version")
-    parser.add_argument("--output", type=Path, help="new JAR path; required with --jar")
+    output_mode = parser.add_mutually_exclusive_group()
+    output_mode.add_argument("--output", type=Path, help="new JAR path; required with --jar unless --in-place")
+    output_mode.add_argument("--in-place", action="store_true", help="atomically replace an unsigned --jar after verification; no backup")
     parser.add_argument("--overwrite-output", action="store_true", help="allow replacing an existing --output JAR")
     parser.add_argument("--version", help="explicit version ID; otherwise select by SHA-256")
     parser.add_argument("--dry-run", action="store_true", help="validate and print planned changes without writing")
@@ -27,13 +29,18 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(levelname)s %(message)s")
     if args.class_file and args.class_file.suffix != ".class":
         parser.error("--class-file must name an unpacked .class file, not a JAR/ZIP")
-    if args.jar and not args.output:
-        parser.error("--output is required with --jar")
+    if args.jar and not (args.output or args.in_place):
+        parser.error("--output or --in-place is required with --jar")
+    if args.class_file and (args.output or args.in_place):
+        parser.error("--output and --in-place are available only with --jar")
     if args.jar and args.dry_run:
         parser.error("--dry-run is available only with --class-file")
     try:
         if args.jar:
-            version, plan = patch_jar(args.jar, args.output, args.config, args.version, args.overwrite_output)
+            if args.in_place:
+                version, plan = patch_jar_in_place(args.jar, args.config, args.version)
+            else:
+                version, plan = patch_jar(args.jar, args.output, args.config, args.version, args.overwrite_output)
         else:
             version, plan = patch_file(args.class_file, args.config, args.version, args.dry_run,
                                        not args.no_backup, args.overwrite_backup, args.source_jar)

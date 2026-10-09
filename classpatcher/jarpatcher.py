@@ -8,7 +8,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import io
+import os
 from pathlib import Path
+import tempfile
 import zipfile
 
 from .patcher import AppliedPatch, PatchError, choose_version, load_config, plan_patches
@@ -34,6 +36,8 @@ def _signature_entries(names: list[str]) -> list[str]:
 
 def patch_jar(source: Path, output: Path, config_path: Path, version_name: str | None,
               overwrite_output: bool = False) -> tuple[str, list[JarAppliedPatch]]:
+    if source.resolve() == output.resolve():
+        raise PatchError("source and output JAR paths must differ; use --in-place for replacement")
     try:
         original_jar = source.read_bytes()
     except OSError as exc:
@@ -96,3 +100,28 @@ def patch_jar(source: Path, output: Path, config_path: Path, version_name: str |
         # Do not delete an output that may contain useful diagnostic evidence.
         raise
     return selected_name, applied
+
+
+def patch_jar_in_place(source: Path, config_path: Path, version_name: str | None) -> tuple[str, list[JarAppliedPatch]]:
+    """Safely replace an unsigned JAR without retaining an output or backup.
+
+    A same-directory temporary file is necessary: ZIP contents must be
+    rewritten, and os.replace only becomes atomic when both paths share a
+    filesystem. The original is untouched until verification succeeds.
+    """
+    try:
+        with tempfile.NamedTemporaryFile(prefix=source.name + ".", suffix=".tmp", dir=source.parent,
+                                         delete=False) as temporary:
+            temporary_path = Path(temporary.name)
+    except OSError as exc:
+        raise PatchError(f"cannot create temporary JAR beside source: {exc}") from exc
+    try:
+        version, applied = patch_jar(source, temporary_path, config_path, version_name, overwrite_output=True)
+        os.replace(temporary_path, source)
+        return version, applied
+    except Exception:
+        try:
+            temporary_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise

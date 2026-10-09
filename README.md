@@ -1,5 +1,7 @@
 # Java `.class` in-place patcher
 
+![](./preview.png)
+
 This is a deliberately narrow binary patcher for **already unpacked Java `.class` files**. It does not use ASM or reserialize a class: it parses enough of the class-file format to locate a method's `Code` attribute, then replaces equal-length byte ranges at their original file offsets.
 
 It is intended for controlled test and maintenance workflows where you own and are authorized to modify the binary. Keep the original artifact and validate the application normally after patching.
@@ -101,6 +103,16 @@ This project has a JAR rewrite mode for **unsigned JARs**:
 ```
 
 It reads the source archive, validates the JAR SHA-256 from YAML, changes only configured class entries in memory, writes a separate output JAR, then verifies the changed bytes. It deliberately refuses to overwrite an existing output unless `--overwrite-output` is given.
+
+To leave the patched archive at the original path without retaining a backup, use `--in-place` instead of `--output`:
+
+```bash
+.venv/bin/python -m classpatcher --jar /path/to/app.jar \
+  --in-place \
+  --config examples/patches.yaml
+```
+
+Internally it writes and verifies a temporary file beside the source JAR, then atomically replaces the original. There is no `.bak` in this mode, so retain a copy yourself if you may need to roll back.
 
 This is still a ZIP rewrite, **not** a direct in-place edit of a compressed member. Changing compressed entry contents can change compressed size, CRC-32, local headers, and central-directory offsets.
 
