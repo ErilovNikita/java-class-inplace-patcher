@@ -1,0 +1,25 @@
+# Replace iconst_0; ireturn with iconst_1; ireturn in fixture/Sample.enabled()Z.
+# `sha256`, when set, is the SHA-256 of the original JAR, not this class file.
+# The fixture omits it so it can be used with any local javac output.
+versions:
+  fixture-test-v1:
+    patches:
+      - id: enable-flag
+        class: fixture/Sample
+        method:
+          name: enabled
+          descriptor: "()Z"
+        old: "03 ac"
+        new: "04 ac"
+
+  production-1.2.3:
+    # Replace with the hash of the exact original JAR.
+    sha256: "PUT_THE_64_HEX_SHA256_OF_THE_ORIGINAL_JAR_HERE"
+    patches:
+      - id: example-only
+        class: com/example/Configuration
+        method:
+          name: isDebugEnabled
+          descriptor: "()Z"
+        old: "03 ac"
+        new: "04 ac"

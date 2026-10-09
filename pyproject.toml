@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "java-class-inplace-patcher"
+version = "0.1.0"
+description = "Strict in-place byte patcher for unpacked Java .class files"
+requires-python = ">=3.10"
+dependencies = ["PyYAML>=6.0,<7"]
+
+[project.scripts]
+classpatch = "classpatcher.__main__:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

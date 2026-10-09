@@ -1,0 +1,73 @@
+# Virtual environments and Python caches
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Build and packaging output
+build/
+dist/
+*.egg-info/
+*.spec
+
+# Local binary inputs, patch outputs, and backups
+*.class
+*.class.bak
+*.jar
+*.jar.bak
+*.zip
+*.zip.bak
+
+# Machine-local configuration; keep examples/patches.yaml tracked
+patches.local.yaml
+patches.local.yml
+.env
+.env.*
+
+# Editor files
+.DS_Store
+.idea/
+.vscode/
+
+# macOS Finder and volume metadata
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+Network Trash Folder
+Temporary Items
+
+# Windows Explorer, thumbnail, and Recycle Bin metadata
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux / Unix desktop and filesystem metadata
+*~
+.directory
+.Trash-*
+.nfs*
+
+# Vim, Emacs, and temporary editor files
+*.swp
+*.swo
+*.swn
+*.bak~
+\#*\#
+.#*
